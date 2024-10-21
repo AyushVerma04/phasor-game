@@ -6,7 +6,6 @@ This is a multiplayer 2D game currently under development. Players will engage i
 
 - Multiplayer support
 - Engaging 2D graphics
-- [List any other key features you plan to include]
 
 ## Status
 
