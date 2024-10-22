@@ -1,5 +1,6 @@
 import React from 'react';
 import GameScene from './components/GameScene';
+import SimpleSocketTest from './components/TestFile';
 
 function App() {
   return (
