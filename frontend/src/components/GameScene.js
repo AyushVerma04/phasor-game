@@ -1,6 +1,10 @@
 import React, { useEffect } from 'react';
 import Phaser from 'phaser';
 import io from 'socket.io-client';
+import { createCharacterAnimations } from '../anims/CharacterAnims';
+import { preloadAssets } from '../scenes/Preloader';
+import { getRandomSpawnPosition } from '../websockets/spawner';
+import { handleMovement, handleNewPlayer, handlePlayerDisconnect, updatePlayerData } from '../websockets/handlePlayerData';
 
 const socket = io('http://172.16.100.81:3000');
 
@@ -8,18 +12,6 @@ const GameScene = () => {
   useEffect(() => {
     const players = {};
     let myId;
-
-    const spawnPositions = [
-      { x: 100, y: 100 },
-      { x: 700, y: 100 },
-      { x: 100, y: 500 },
-      { x: 700, y: 500 },
-      { x: 400, y: 300 }
-    ];
-  
-    const getRandomSpawnPosition = () => {
-      return spawnPositions[Math.floor(Math.random() * spawnPositions.length)];
-    };
 
     const config = {
       type: Phaser.AUTO,
@@ -42,18 +34,13 @@ const GameScene = () => {
     const game = new Phaser.Game(config);
   
     function preload() {
-      console.log("Loading assets...");
-      this.load.image('map', 'mapCustomUpdated.png');
-      this.load.spritesheet('player', 'spriteMap.png', { frameWidth: 32, frameHeight: 48 });
-      this.load.spritesheet('walk_down', 'walkdown.png', { frameWidth: 40, frameHeight: 48 });
-      this.load.spritesheet('walk_up', 'walkup.png', { frameWidth: 40, frameHeight: 48 });
-      this.load.spritesheet('walk_left', 'walkleft.png', { frameWidth: 40, frameHeight: 48 });
-      this.load.spritesheet('walk_right', 'walkright.png', { frameWidth: 40, frameHeight: 48 });
+      preloadAssets(this);
     }
   
     function create() {
+
       this.add.image(0, 0, 'map').setOrigin(0, 0).setScale(0.5);
-      createAnimations.call(this);
+      createCharacterAnimations(this);
   
       const spawnPosition = getRandomSpawnPosition();
       this.player = this.physics.add.sprite(spawnPosition.x, spawnPosition.y, 'player').setScale(1.5);
@@ -63,56 +50,23 @@ const GameScene = () => {
   
       players[myId] = this.player;
 
-      this.physics.world.setBounds(0, 0, 1600, 1200);  // Set your world size
+      this.physics.world.setBounds(0, 0, 1600, 1200); 
       this.cameras.main.setBounds(0, 0, 1600, 1200);   // Make sure the camera is restricted to the world bounds
       this.cameras.main.startFollow(this.player);
   
       this.cursors = this.input.keyboard.createCursorKeys();
   
-      socket.on('playerData', updatePlayerData.bind(this));
-      socket.on('newPlayer', handleNewPlayer.bind(this));
-      socket.on('playerDisconnected', handlePlayerDisconnect.bind(this));
+      socket.on('playerData', (data) => updatePlayerData(data, players,myId, this));
+      socket.on('newPlayer', (id) => handleNewPlayer(id, players, this));
+      socket.on('playerDisconnected', (id) => handlePlayerDisconnect(id, players));
       socket.on('connect_error', handleError);
-    }
-  
-    function createAnimations() {
-      const animationConfig = {
-        frameRate: 10,
-        repeat: -1
-      };
-  
-      this.anims.create({
-        key: 'walk_down',
-        frames: this.anims.generateFrameNumbers('walk_down', { start: 0, end: 3 }),
-        ...animationConfig
-      });
-      this.anims.create({
-        key: 'walk_left',
-        frames: this.anims.generateFrameNumbers('walk_left', { start: 0, end: 3 }),
-        ...animationConfig
-      });
-      this.anims.create({
-        key: 'walk_right',
-        frames: this.anims.generateFrameNumbers('walk_right', { start: 0, end: 3 }),
-        ...animationConfig
-      });
-      this.anims.create({
-        key: 'walk_up',
-        frames: this.anims.generateFrameNumbers('walk_up', { start: 0, end: 3 }),
-        ...animationConfig
-      });
-      this.anims.create({
-        key: 'stay',
-        frames: [{ key: 'walk_down', frame: 0 }],
-        frameRate: 20
-      });
     }
 
     function update() {
       if (!myId || !players[myId]) return;
   
       const player = players[myId];
-      let moving = handleMovement.call(this, this.cursors, player);
+      let moving = handleMovement(this.cursors, player, this);
   
       if (!moving) {
         player.anims.play('stay', true);
@@ -125,88 +79,6 @@ const GameScene = () => {
         y: player.y,
         anim: player.anims.currentAnim ? player.anims.currentAnim.key : 'stay'
       });
-    }
-  
-    function handleMovement(cursors, player) {
-      let moving = false;
-  
-      if (cursors.left.isDown) {
-        player.anims.play('walk_left', true);
-        player.setVelocityX(-160);
-        moving = true;
-      } else if (cursors.right.isDown) {
-        player.anims.play('walk_right', true);
-        player.setVelocityX(160);
-        moving = true;
-      } else {
-        player.setVelocityX(0);
-      }
-  
-      if (cursors.up.isDown) {
-        player.anims.play('walk_up', true);
-        player.setVelocityY(-160);
-        moving = true;
-      } else if (cursors.down.isDown) {
-        player.anims.play('walk_down', true);
-        player.setVelocityY(160);
-        moving = true;
-      } else {
-        player.setVelocityY(0);
-      }
-  
-      return moving;
-    }
-  
-    function handleNewPlayer(id) {
-      console.log(players);
-      console.log('New player joined:', id);
-  
-      // If a new player joins, spawn them at a random position
-      // if (!players[id]) {
-      //   const spawnPosition = getRandomSpawnPosition();
-      //   players[id] = this.physics.add.sprite(spawnPosition.x, spawnPosition.y, 'player').setScale(1.5);
-      //   players[id].setCollideWorldBounds(true);
-      // }
-    }
-  
-    function updatePlayerData(data) {
-      for (const id in data) {
-        if (id === myId) {
-          continue; // Skip the local player
-        }
-    
-        if (!players[id]) {
-          const spawnPosition = getRandomSpawnPosition();
-          players[id] = this.physics.add.sprite(spawnPosition.x, spawnPosition.y, 'player').setScale(1.5);
-          players[id].setCollideWorldBounds(true);
-          players[id].body.setCollideWorldBounds(true);
-          
-          const nameTag = this.add.text(spawnPosition.x, spawnPosition.y - 20, 'PLAYER', { 
-            fontSize: '18px', 
-            fill: '#fff' 
-          }).setOrigin(0.5, 1);
-    
-          players[id].nameTag = nameTag;
-        } else {
-          players[id].setPosition(data[id].x, data[id].y);
-        }
-
-        if (players[id].nameTag) {
-          players[id].nameTag.setPosition(players[id].x, players[id].y - 35); 
-        }
-    
-        if (data[id].anim && players[id].anims) {
-          players[id].anims.play(data[id].anim, true);
-        }
-      }
-    }
-  
-    function handlePlayerDisconnect(id) {
-      if (players[id]) {
-        players[id].nameTag.destroy();
-        players[id].destroy();
-        delete players[id];
-      }
     }
   
     function handleError(err) {
