@@ -1,11 +1,34 @@
 import { getRandomSpawnPosition } from "./spawner";
 
+export const handlePlayer = (socket, players, myId, scene) => {
+
+  const player = players[myId];
+  let moving = handleMovement(scene.cursors, player);
+
+  if (!moving) {
+    player.anims.play('stay', true);
+  }
+
+  // Emit the player's updated position to the server, including animation state
+  socket.emit('playerMove', {
+    id: myId,
+    x: player.x,
+    y: player.y,
+    anim: player.anims.currentAnim ? player.anims.currentAnim.key : 'stay'
+  });
+
+  socket.on('playerData', (data) => updatePlayerData(data, players, myId, scene));
+  socket.on('newPlayer', (id) => handleNewPlayer(id, players, scene));
+  socket.on('playerDisconnected', (id) => handlePlayerDisconnect(id, players));
+  socket.on('connect_error', handleError);
+}
+
 export const handleNewPlayer = (id, players) => {
   console.log(players);
   console.log('New player joined:', id);
 }
 
-export const handlePlayerDisconnect = (id, players) => {
+const handlePlayerDisconnect = (id, players) => {
   if (players[id]) {
     players[id].nameTag.destroy();
     players[id].destroy();
@@ -13,7 +36,7 @@ export const handlePlayerDisconnect = (id, players) => {
   }
 }
 
-export const updatePlayerData = (data, players, myId, scene) => {
+const updatePlayerData = (data, players, myId, scene) => {
     for (const id in data) {
       if (id === myId) {
         continue;
@@ -44,7 +67,7 @@ export const updatePlayerData = (data, players, myId, scene) => {
     }
   };
 
-export const handleMovement = (cursors, player, scene) => {
+export const handleMovement = (cursors, player) => {
   let moving = false;
 
   if (cursors.left.isDown) {
@@ -72,5 +95,9 @@ export const handleMovement = (cursors, player, scene) => {
   }
 
   return moving;
+}
+
+const handleError = (err) => {
+  console.error('Socket connection error:', err);
 }
   

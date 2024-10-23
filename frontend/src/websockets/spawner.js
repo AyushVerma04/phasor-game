@@ -7,5 +7,11 @@ const spawnPositions = [
   ];
 
 export const getRandomSpawnPosition = () => {
-return spawnPositions[Math.floor(Math.random() * spawnPositions.length)];
+  return spawnPositions[Math.floor(Math.random() * spawnPositions.length)];
 };
+
+export const spawnLocalCharacter = (scene) =>{
+      const spawnPosition = getRandomSpawnPosition();
+      scene.player = scene.physics.add.sprite(spawnPosition.x, spawnPosition.y, 'player').setScale(1.5);
+      scene.player.setCollideWorldBounds(true);
+}
