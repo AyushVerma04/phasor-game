@@ -43,7 +43,7 @@ const GameScene = () => {
   
     function preload() {
       console.log("Loading assets...");
-      this.load.image('map', 'mapCustom.png');
+      this.load.image('map', 'mapCustomUpdated.png');
       this.load.spritesheet('player', 'spriteMap.png', { frameWidth: 32, frameHeight: 48 });
       this.load.spritesheet('walk_down', 'walkdown.png', { frameWidth: 40, frameHeight: 48 });
       this.load.spritesheet('walk_up', 'walkup.png', { frameWidth: 40, frameHeight: 48 });
@@ -62,6 +62,10 @@ const GameScene = () => {
       myId = 'localPlayer';
   
       players[myId] = this.player;
+
+      this.physics.world.setBounds(0, 0, 1600, 1200);  // Set your world size
+      this.cameras.main.setBounds(0, 0, 1600, 1200);   // Make sure the camera is restricted to the world bounds
+      this.cameras.main.startFollow(this.player);
   
       this.cursors = this.input.keyboard.createCursorKeys();
   
@@ -103,7 +107,7 @@ const GameScene = () => {
         frameRate: 20
       });
     }
-  
+
     function update() {
       if (!myId || !players[myId]) return;
   
@@ -199,6 +203,7 @@ const GameScene = () => {
   
     function handlePlayerDisconnect(id) {
       if (players[id]) {
+        players[id].nameTag.destroy();
         players[id].destroy();
         delete players[id];
       }
