@@ -71,29 +71,28 @@ const updatePlayerData = (data, players, myId, scene) => {
 
 export const handleMovement = (cursors, player) => {
   let moving = false;
-
-  if (cursors.left.isDown) {
-    player.anims.play('walk_left', true);
-    player.setVelocityX(-160);
-    moving = true;
-  } else if (cursors.right.isDown) {
-    player.anims.play('walk_right', true);
-    player.setVelocityX(160);
-    moving = true;
-  } else {
-    player.setVelocityX(0);
-  }
-
-  if (cursors.up.isDown) {
+  if (cursors.up.isDown && !moving) {
     player.anims.play('walk_up', true);
     player.setVelocityY(-160);
     moving = true;
-  } else if (cursors.down.isDown) {
+  } else if (cursors.down.isDown && !moving) {
     player.anims.play('walk_down', true);
     player.setVelocityY(160);
     moving = true;
   } else {
     player.setVelocityY(0);
+  }
+
+  if (cursors.left.isDown && !moving) {
+    player.anims.play('walk_left', true);
+    player.setVelocityX(-160);
+    moving = true;
+  } else if (cursors.right.isDown && !moving) {
+    player.anims.play('walk_right', true);
+    player.setVelocityX(160);
+    moving = true;
+  } else {
+    player.setVelocityX(0);
   }
 
   return moving;

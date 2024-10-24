@@ -19,7 +19,7 @@ export const spawnLocalCharacter = (scene, players) => {
 
     scene.player.setCollideWorldBounds(true);
 
-    const nameTag = scene.add.text(spawnPosition.x, spawnPosition.y - 20, `${localUsername}`, {
+    const nameTag = scene.add.text(spawnPosition.x, spawnPosition.y - 35, `${localUsername}`, {
       fontSize: '18px',
       fill: '#fff'
     }).setOrigin(0.5, 1);
