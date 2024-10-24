@@ -46,6 +46,7 @@ io.on('connection', (socket) => {
   // Initialize player position and animation state with random spawn position
   const spawnPosition = getRandomSpawnPosition();
   players[socket.id] = {
+    username: 'User' + Math.random(1,100).toFixed(2)*100,
     x: spawnPosition.x,
     y: spawnPosition.y,
     anim: 'stay' // Default animation state
@@ -57,10 +58,12 @@ io.on('connection', (socket) => {
   // Notify all other players about the new player
   socket.broadcast.emit('newPlayer', {
     id: socket.id,
+    username: players[socket.id].username,
     x: players[socket.id].x,
     y: players[socket.id].y,
     anim: players[socket.id].anim
   });
+
 
   // Listen for player movement and animation updates
   socket.on('playerMove', (data) => {

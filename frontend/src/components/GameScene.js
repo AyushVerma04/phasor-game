@@ -4,7 +4,7 @@ import io from 'socket.io-client';
 import { createCharacterAnimations } from '../anims/CharacterAnims';
 import { preloadAssets } from '../scenes/Preloader';
 import { handlePlayer } from '../websockets/handlePlayerData';
-import { spawnLocalCharacter } from '../websockets/spawner';
+import { spawnLocalCharacter, updateLocalPlayerNameTag } from '../websockets/spawner';
 
 const socket = io('http://172.16.100.81:3000');
 
@@ -15,8 +15,8 @@ const GameScene = () => {
 
     const config = {
       type: Phaser.AUTO,
-      width: 1062,
-      height: 600,
+      width: 1600,
+      height: 900,
       physics: {
         default: 'arcade',
         arcade: {
@@ -50,7 +50,7 @@ const GameScene = () => {
       WallLayer.setCollisionBetween(0,1200);
       
       createCharacterAnimations(this);
-      spawnLocalCharacter(this);
+      spawnLocalCharacter(this, players);
       
       this.physics.add.collider(this.player, WallLayer);
       myId = 'localPlayer';
@@ -68,6 +68,7 @@ const GameScene = () => {
       if (!myId || !players[myId]) return;
       
       handlePlayer(socket, players, myId, this);
+      // updateLocalPlayerNameTag(this, players)
     }
   
     return () => {

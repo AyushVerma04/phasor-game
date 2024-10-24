@@ -1,4 +1,4 @@
-import { getRandomSpawnPosition } from "./spawner";
+import { getRandomSpawnPosition, updateLocalPlayerNametag } from "./spawner";
 
 export const handlePlayer = (socket, players, myId, scene) => {
 
@@ -8,24 +8,24 @@ export const handlePlayer = (socket, players, myId, scene) => {
   if (!moving) {
     player.anims.play('stay', true);
   }
-
-  // Emit the player's updated position to the server, including animation state
+  
   socket.emit('playerMove', {
-    id: myId,
+    id: socket.id,
+    username: player.username,
     x: player.x,
     y: player.y,
     anim: player.anims.currentAnim ? player.anims.currentAnim.key : 'stay'
   });
 
-  socket.on('playerData', (data) => updatePlayerData(data, players, myId, scene));
-  socket.on('newPlayer', (id) => handleNewPlayer(id, players, scene));
+  socket.on('playerData', (data) => updatePlayerData(data, players, socket.id, scene));
+  socket.on('newPlayer', (newPlayer) => handleNewPlayer(newPlayer, players, scene));
   socket.on('playerDisconnected', (id) => handlePlayerDisconnect(id, players));
   socket.on('connect_error', handleError);
 }
 
-export const handleNewPlayer = (id, players) => {
+export const handleNewPlayer = (newPlayer, players) => {
   console.log(players);
-  console.log('New player joined:', id);
+  console.log('New player joined:', newPlayer);
 }
 
 const handlePlayerDisconnect = (id, players) => {
@@ -39,6 +39,7 @@ const handlePlayerDisconnect = (id, players) => {
 const updatePlayerData = (data, players, myId, scene) => {
     for (const id in data) {
       if (id === myId) {
+        updateLocalPlayerNametag(scene, players, id);
         continue;
       }
 
@@ -46,8 +47,9 @@ const updatePlayerData = (data, players, myId, scene) => {
         const spawnPosition = getRandomSpawnPosition();
         players[id] = scene.physics.add.sprite(spawnPosition.x, spawnPosition.y, 'player').setScale(1.5);
         players[id].setCollideWorldBounds(true);
-        
-        const nameTag = scene.add.text(spawnPosition.x, spawnPosition.y - 20, 'PLAYER', {
+        players[id].username = data[id].username;
+
+        const nameTag = scene.add.text(spawnPosition.x, spawnPosition.y - 20, `${players[id].username}`, {
           fontSize: '18px',
           fill: '#fff'
         }).setOrigin(0.5, 1);
