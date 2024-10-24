@@ -4,9 +4,9 @@ import io from 'socket.io-client';
 import { createCharacterAnimations } from '../anims/CharacterAnims';
 import { preloadAssets } from '../scenes/Preloader';
 import { handlePlayer } from '../websockets/handlePlayerData';
-import { spawnLocalCharacter, updateLocalPlayerNameTag } from '../websockets/spawner';
+import { spawnLocalCharacter } from '../websockets/spawner';
 
-const socket = io('http://172.16.100.81:3000');
+const socket = io('https://phasor-game.onrender.com');
 
 const GameScene = () => {
   useEffect(() => {
