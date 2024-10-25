@@ -6,6 +6,7 @@ import { preloadAssets } from '../scenes/Preloader';
 import { handlePlayer } from '../websockets/handlePlayerData';
 import { spawnLocalCharacter } from '../websockets/spawner';
 import { createMapAnimations } from '../anims/MapAnims';
+import { setupSocketEventListeners } from '../websockets/setupSocketEventListeners';
 
 const socket = io('https://phasor-game.onrender.com');
 // const socket = io('http://localhost:3000');
@@ -52,10 +53,16 @@ const GameScene = () => {
 
       // WallLayer.setCollisionByProperty({ collides: true });
       // WallLayer.setCollisionBetween(0,1200);
+
+      setupSocketEventListeners(socket, players, this);
       
       const mapBackground = this.add.sprite(0, 0, 'animatedMap').setOrigin(0, 0).setScale(1.25);
       createMapAnimations(this);
       mapBackground.play('mapAnimation');
+
+      this.backgroundMusic = this.sound.add('retro');
+      this.backgroundMusic.setLoop(true);
+      this.backgroundMusic.play({ volume: 0.25 });
 
       createCharacterAnimations(this);
       spawnLocalCharacter(this, players);

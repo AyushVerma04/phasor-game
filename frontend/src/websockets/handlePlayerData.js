@@ -20,20 +20,14 @@ export const handlePlayer = (socket, players, myId, scene) => {
     });
 
   }
-
-
-  socket.on('playerData', (data) => updatePlayerData(data, players, socket.id, scene));
-  socket.on('newPlayer', (newPlayer) => handleNewPlayer(newPlayer, players, scene));
-  socket.on('playerDisconnected', (id) => handlePlayerDisconnect(id, players));
-  socket.on('connect_error', handleError);
 }
 
 export const handleNewPlayer = (newPlayer, players) => {
-  console.log(players);
+  // console.log(players);
   console.log('New player joined:', newPlayer);
 }
 
-const handlePlayerDisconnect = (id, players) => {
+export const handlePlayerDisconnect = (id, players) => {
   if (players[id]) {
     players[id].nameTag.destroy();
     players[id].destroy();
@@ -41,7 +35,7 @@ const handlePlayerDisconnect = (id, players) => {
   }
 }
 
-const updatePlayerData = (data, players, myId, scene) => {
+export const updatePlayerData = (data, players, myId, scene) => {
     for (const id in data) {
       if (id === myId) {
         updateLocalPlayerNametag(scene, players, id);
@@ -103,7 +97,7 @@ export const handleMovement = (cursors, player, socket) => {
   return moving;
 }
 
-const handleError = (err) => {
+export const handleError = (err) => {
   console.error('Socket connection error:', err);
 }
   
