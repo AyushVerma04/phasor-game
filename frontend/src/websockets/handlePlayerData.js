@@ -1,21 +1,26 @@
 import { getRandomSpawnPosition, updateLocalPlayerNametag } from "./spawner";
 
+let framesPassed = 0;  
 export const handlePlayer = (socket, players, myId, scene) => {
-
+  framesPassed++;
   const player = players[myId];
   let moving = handleMovement(scene.cursors, player);
 
   if (!moving) {
     player.anims.play('stay', true);
   }
-  
-  socket.emit('playerMove', {
-    id: socket.id,
-    username: player.username,
-    x: player.x,
-    y: player.y,
-    anim: player.anims.currentAnim ? player.anims.currentAnim.key : 'stay'
-  });
+
+  if (framesPassed % 7 === 0){
+    socket.emit('playerMove', {
+      id: socket.id,
+      username: player.username,
+      x: player.x,
+      y: player.y,
+      anim: player.anims.currentAnim
+    });
+
+  }
+
 
   socket.on('playerData', (data) => updatePlayerData(data, players, socket.id, scene));
   socket.on('newPlayer', (newPlayer) => handleNewPlayer(newPlayer, players, scene));
@@ -69,7 +74,7 @@ const updatePlayerData = (data, players, myId, scene) => {
     }
   };
 
-export const handleMovement = (cursors, player) => {
+export const handleMovement = (cursors, player, socket) => {
   let moving = false;
   if (cursors.up.isDown && !moving) {
     player.anims.play('walk_up', true);
