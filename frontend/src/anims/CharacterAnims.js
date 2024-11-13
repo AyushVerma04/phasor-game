@@ -3,7 +3,7 @@ export const createCharacterAnimations = (scene) => {
       frameRate: 10,
       repeat: -1
     };
-  
+    
     scene.anims.create({
       key: 'walk_down',
       frames: scene.anims.generateFrameNumbers('walk_down', { start: 0, end: 3 }),

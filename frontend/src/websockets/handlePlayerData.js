@@ -1,8 +1,30 @@
-import { getRandomSpawnPosition } from "./spawner";
+import { getRandomSpawnPosition, updateLocalPlayerNametag } from "./spawner";
 
-export const handleNewPlayer = (id, players) => {
-  console.log(players);
-  console.log('New player joined:', id);
+let framesPassed = 0;  
+export const handlePlayer = (socket, players, myId, scene) => {
+  framesPassed++;
+  const player = players[myId];
+  let moving = handleMovement(scene.cursors, player);
+
+  if (!moving) {
+    player.anims.play('stay', true);
+  }
+
+  if (framesPassed % 7 === 0){
+    socket.emit('playerMove', {
+      id: socket.id,
+      username: player.username,
+      x: player.x,
+      y: player.y,
+      anim: player.anims.currentAnim
+    });
+
+  }
+}
+
+export const handleNewPlayer = (newPlayer, players) => {
+  // console.log(players);
+  console.log('New player joined:', newPlayer);
 }
 
 export const handlePlayerDisconnect = (id, players) => {
@@ -16,6 +38,7 @@ export const handlePlayerDisconnect = (id, players) => {
 export const updatePlayerData = (data, players, myId, scene) => {
     for (const id in data) {
       if (id === myId) {
+        updateLocalPlayerNametag(scene, players, id);
         continue;
       }
 
@@ -23,8 +46,9 @@ export const updatePlayerData = (data, players, myId, scene) => {
         const spawnPosition = getRandomSpawnPosition();
         players[id] = scene.physics.add.sprite(spawnPosition.x, spawnPosition.y, 'player').setScale(1.5);
         players[id].setCollideWorldBounds(true);
-        
-        const nameTag = scene.add.text(spawnPosition.x, spawnPosition.y - 20, 'PLAYER', {
+        players[id].username = data[id].username;
+
+        const nameTag = scene.add.text(spawnPosition.x, spawnPosition.y - 20, `${players[id].username}`, {
           fontSize: '18px',
           fill: '#fff'
         }).setOrigin(0.5, 1);
@@ -44,26 +68,13 @@ export const updatePlayerData = (data, players, myId, scene) => {
     }
   };
 
-export const handleMovement = (cursors, player, scene) => {
+export const handleMovement = (cursors, player, socket) => {
   let moving = false;
-
-  if (cursors.left.isDown) {
-    player.anims.play('walk_left', true);
-    player.setVelocityX(-160);
-    moving = true;
-  } else if (cursors.right.isDown) {
-    player.anims.play('walk_right', true);
-    player.setVelocityX(160);
-    moving = true;
-  } else {
-    player.setVelocityX(0);
-  }
-
-  if (cursors.up.isDown) {
+  if (cursors.up.isDown && !moving) {
     player.anims.play('walk_up', true);
     player.setVelocityY(-160);
     moving = true;
-  } else if (cursors.down.isDown) {
+  } else if (cursors.down.isDown && !moving) {
     player.anims.play('walk_down', true);
     player.setVelocityY(160);
     moving = true;
@@ -71,6 +82,22 @@ export const handleMovement = (cursors, player, scene) => {
     player.setVelocityY(0);
   }
 
+  if (cursors.left.isDown && !moving) {
+    player.anims.play('walk_left', true);
+    player.setVelocityX(-160);
+    moving = true;
+  } else if (cursors.right.isDown && !moving) {
+    player.anims.play('walk_right', true);
+    player.setVelocityX(160);
+    moving = true;
+  } else {
+    player.setVelocityX(0);
+  }
+
   return moving;
+}
+
+export const handleError = (err) => {
+  console.error('Socket connection error:', err);
 }
   

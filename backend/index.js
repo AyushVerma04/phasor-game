@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: '*', // Same as your frontend
+    origin: '*',
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type'],
     credentials: true
@@ -46,6 +46,7 @@ io.on('connection', (socket) => {
   // Initialize player position and animation state with random spawn position
   const spawnPosition = getRandomSpawnPosition();
   players[socket.id] = {
+    username: 'User' + Math.random().toFixed(3).slice(2, 5), // Random username generation
     x: spawnPosition.x,
     y: spawnPosition.y,
     anim: 'stay' // Default animation state
@@ -54,9 +55,10 @@ io.on('connection', (socket) => {
   // Send the full player list to the newly connected player
   socket.emit('playerData', players);
 
-  // Notify all other players about the new player
+  // Notify all other players about the new player only once
   socket.broadcast.emit('newPlayer', {
     id: socket.id,
+    username: players[socket.id].username,
     x: players[socket.id].x,
     y: players[socket.id].y,
     anim: players[socket.id].anim
@@ -79,7 +81,9 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`Player disconnected: ${socket.id}`);
     delete players[socket.id];
-    io.emit('playerDisconnected', socket.id)
+    
+    // Notify all clients about the disconnection
+    io.emit('playerDisconnected', socket.id);
     io.emit('playerData', players); // Update remaining players after disconnect
   });
 });

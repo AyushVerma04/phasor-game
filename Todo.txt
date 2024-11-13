@@ -1,6 +1,7 @@
--> Add tile sprite
--> add tile map
+-> Fix the server updating position of the sprite every frame regardless of its movement state (priority)
 -> Add furniture
 -> Add player to player interactions
--> Create more sprites
--> Add username to players
+-> Add homepage
+-> Add username input form on homepage
+-> New map
+-> Global chat

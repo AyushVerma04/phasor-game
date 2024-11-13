@@ -3,10 +3,13 @@ import Phaser from 'phaser';
 import io from 'socket.io-client';
 import { createCharacterAnimations } from '../anims/CharacterAnims';
 import { preloadAssets } from '../scenes/Preloader';
-import { getRandomSpawnPosition } from '../websockets/spawner';
-import { handleMovement, handleNewPlayer, handlePlayerDisconnect, updatePlayerData } from '../websockets/handlePlayerData';
+import { handlePlayer } from '../websockets/handlePlayerData';
+import { spawnLocalCharacter } from '../websockets/spawner';
+import { createMapAnimations } from '../anims/MapAnims';
+import { setupSocketEventListeners } from '../websockets/setupSocketEventListeners';
 
-const socket = io('http://172.16.100.81:3000');
+const socket = io('https://phasor-game.onrender.com');
+// const socket = io('http://localhost:3000');
 
 const GameScene = () => {
   useEffect(() => {
@@ -15,8 +18,8 @@ const GameScene = () => {
 
     const config = {
       type: Phaser.AUTO,
-      width: 800,
-      height: 600,
+      width: 1600,
+      height: 900,
       physics: {
         default: 'arcade',
         arcade: {
@@ -39,50 +42,49 @@ const GameScene = () => {
   
     function create() {
 
-      this.add.image(0, 0, 'map').setOrigin(0, 0).setScale(0.5);
+      // this.add.image(0, 0, 'map').setOrigin(0, 0).setScale(0.5);
+      // const map = this.make.tilemap({ key: 'map', tileWidth: 32, tileHeight: 32 });
+      // const tileset = map.addTilesetImage('fantasy', 'fantasy');
+      // const tileset2 = map.addTilesetImage('fantasy', 'fantasy');
+      // const GroundLayer = map.createLayer(0, tileset2, 0, 0);
+      // const WallLayer = map.createLayer(1, tileset, 0, 0);
+
+      
+
+      // WallLayer.setCollisionByProperty({ collides: true });
+      // WallLayer.setCollisionBetween(0,1200);
+
+      setupSocketEventListeners(socket, players, this);
+      
+      const mapBackground = this.add.sprite(0, 0, 'animatedMap').setOrigin(0, 0).setScale(1.25);
+      createMapAnimations(this);
+      mapBackground.play('mapAnimation');
+
+      this.backgroundMusic = this.sound.add('retro');
+      this.backgroundMusic.setLoop(true);
+      this.backgroundMusic.play({ volume: 0.25 });
+
       createCharacterAnimations(this);
-  
-      const spawnPosition = getRandomSpawnPosition();
-      this.player = this.physics.add.sprite(spawnPosition.x, spawnPosition.y, 'player').setScale(1.5);
-      this.player.setCollideWorldBounds(true);
-  
+      spawnLocalCharacter(this, players);
+
+      
+      // this.physics.add.collider(this.player, WallLayer);
       myId = 'localPlayer';
   
       players[myId] = this.player;
 
-      this.physics.world.setBounds(0, 0, 1600, 1200); 
-      this.cameras.main.setBounds(0, 0, 1600, 1200);   // Make sure the camera is restricted to the world bounds
+      this.physics.world.setBounds(0, 0, 1600, 900); 
+      this.cameras.main.setBounds(0, 0, 1600, 900);   // Make sure the camera is restricted to the world bounds
       this.cameras.main.startFollow(this.player);
   
       this.cursors = this.input.keyboard.createCursorKeys();
-  
-      socket.on('playerData', (data) => updatePlayerData(data, players,myId, this));
-      socket.on('newPlayer', (id) => handleNewPlayer(id, players, this));
-      socket.on('playerDisconnected', (id) => handlePlayerDisconnect(id, players));
-      socket.on('connect_error', handleError);
     }
 
     function update() {
       if (!myId || !players[myId]) return;
-  
-      const player = players[myId];
-      let moving = handleMovement(this.cursors, player, this);
-  
-      if (!moving) {
-        player.anims.play('stay', true);
-      }
-  
-      // Emit the player's updated position to the server, including animation state
-      socket.emit('playerMove', {
-        id: myId,
-        x: player.x,
-        y: player.y,
-        anim: player.anims.currentAnim ? player.anims.currentAnim.key : 'stay'
-      });
-    }
-  
-    function handleError(err) {
-      console.error('Socket connection error:', err);
+      
+      handlePlayer(socket, players, myId, this);
+      // updateLocalPlayerNameTag(this, players)
     }
   
     return () => {
